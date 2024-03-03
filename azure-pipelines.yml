@@ -1,19 +1,54 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
 trigger:
 - main
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: 'ubuntu-latest'
 
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+stages:
+- stage: Build
+  displayName: 'Build Stage'
+  jobs:
+  - job: Build
+    displayName: 'Build Job'
+    steps:
+    - script: |
+        echo 'Building the application...'
+        # Add your build commands here
+      displayName: 'Build'
+      
+    # Publish artifacts for later stages
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)'
+        artifact: 'drop'
+        publishLocation: 'pipeline'
+  
+- stage: Test
+  displayName: 'Test Stage'
+  dependsOn: Build
+  jobs:
+  - job: Test
+    displayName: 'Test Job'
+    steps:
+    - download: current
+      artifact: drop
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+    - script: |
+        echo 'Running tests...'
+        # Add your test commands here
+      displayName: 'Run Tests'
+      
+- stage: DeployProd
+  displayName: 'Production Deployment Stage'
+  dependsOn: Test
+  condition: succeeded()
+  jobs:
+  - deployment: Deploy
+    displayName: 'Production Deployment Job'
+    environment: 'Production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            arti
