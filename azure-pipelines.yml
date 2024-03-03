@@ -16,39 +16,18 @@ stages:
         # Add your build commands here
       displayName: 'Build'
       
-    # Publish artifacts for later stages
-    - task: PublishPipelineArtifact@1
-      inputs:
-        targetPath: '$(Build.ArtifactStagingDirectory)'
-        artifact: 'drop'
-        publishLocation: 'pipeline'
-  
-- stage: Test
-  displayName: 'Test Stage'
+- stage: Deploy
+  displayName: 'Deployment Stage'
   dependsOn: Build
   jobs:
-  - job: Test
-    displayName: 'Test Job'
-    steps:
-    - download: current
-      artifact: drop
-
-    - script: |
-        echo 'Running tests...'
-        # Add your test commands here
-      displayName: 'Run Tests'
-      
-- stage: DeployProd
-  displayName: 'Production Deployment Stage'
-  dependsOn: Test
-  condition: succeeded()
-  jobs:
   - deployment: Deploy
-    displayName: 'Production Deployment Job'
-    environment: 'Production'
+    displayName: 'Deployment Job'
+    environment: 'Test'
     strategy:
       runOnce:
         deploy:
           steps:
-          - download: current
-            arti
+          - script: |
+              echo 'Deploying the application...'
+              # Add your deployment commands here
+            displayName: 'Deploy'
